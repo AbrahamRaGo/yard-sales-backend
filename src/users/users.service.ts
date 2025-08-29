@@ -1,23 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { HashingService } from 'src/hashing/hashing.service';
+import { UserCreatedDto } from './dto/user-created.dto';
 
 @Injectable()
 export class UsersService {
-  //TODO Crear el primer usuario, solucionar el tema del dto
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    private prisma: PrismaService,
+    private hashService: HashingService,
+  ) {}
+
+  async create(user: RegisterUserDto): Promise<UserCreatedDto> {
+    const hashedPassword = await this.hashService.hashPassword(user.password);
+    return await this.prisma.user.create({
+      data: { ...user, password: hashedPassword },
+      select: { id: true, name: true },
+    });
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    const users = await this.prisma.user.findMany();
+    return users;
   }
 
   findOne(id: number) {
     return `This action returns a #${id} user`;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: number, updateUser: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
